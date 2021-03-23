@@ -2,22 +2,40 @@ package com.codegym.dao;
 
 import com.codegym.model.User;
 
+import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO implements IUserDAO{
-    private String jdbcURL = "jdbc:mysql://localhost:3306/demo?useSSL=false";
-    private String jdbcUsername = "root";
-    private String jdbcPassword = "123456";
-
+public class UserDAO implements IUserDAO {
     private static final String INSERT_USERS_SQL = "INSERT INTO users" + "  (name, email, country) VALUES " +
             " (?, ?, ?);";
-
     private static final String SELECT_USER_BY_ID = "select id,name,email,country from users where id =?";
     private static final String SELECT_ALL_USERS = "select * from users";
     private static final String DELETE_USERS_SQL = "delete from users where id = ?;";
     private static final String UPDATE_USERS_SQL = "update users set name = ?,email= ?, country =? where id = ?;";
+    private static final String SQL_INSERT = "INSERT INTO EMPLOYEE (NAME, SALARY, CREATED_DATE) VALUES (?,?,?)";
+    private static final String SQL_UPDATE = "UPDATE EMPLOYEE SET SALARY=? WHERE NAME=?";
+    private static final String SQL_TABLE_CREATE = "CREATE TABLE EMPLOYEE"
+
+            + "("
+
+            + " ID serial,"
+
+            + " NAME varchar(100) NOT NULL,"
+
+            + " SALARY numeric(15, 2) NOT NULL,"
+
+            + " CREATED_DATE timestamp,"
+
+            + " PRIMARY KEY (ID)"
+
+            + ")";
+    private static final String SQL_TABLE_DROP = "DROP TABLE IF EXISTS EMPLOYEE";
+    private final String jdbcURL = "jdbc:mysql://localhost:3306/demo?useSSL=false";
+    private final String jdbcUsername = "root";
+    private final String jdbcPassword = "123456";
 
     public UserDAO() {
     }
@@ -56,7 +74,7 @@ public class UserDAO implements IUserDAO{
         // Step 1: Establishing a Connection
         try (Connection connection = getConnection();
              // Step 2:Create a statement using connection object
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_ID);) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_ID)) {
             preparedStatement.setInt(1, id);
             System.out.println(preparedStatement);
             // Step 3: Execute the query or update query
@@ -83,7 +101,7 @@ public class UserDAO implements IUserDAO{
         try (Connection connection = getConnection();
 
              // Step 2:Create a statement using connection object
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_USERS);) {
+             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_USERS)) {
             System.out.println(preparedStatement);
             // Step 3: Execute the query or update query
             ResultSet rs = preparedStatement.executeQuery();
@@ -104,7 +122,7 @@ public class UserDAO implements IUserDAO{
 
     public boolean deleteUser(int id) throws SQLException {
         boolean rowDeleted;
-        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(DELETE_USERS_SQL);) {
+        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(DELETE_USERS_SQL)) {
             statement.setInt(1, id);
             rowDeleted = statement.executeUpdate() > 0;
         }
@@ -113,7 +131,7 @@ public class UserDAO implements IUserDAO{
 
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
-        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL);) {
+        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
             statement.setString(1, user.getName());
             statement.setString(2, user.getEmail());
             statement.setString(3, user.getCountry());
@@ -138,7 +156,7 @@ public class UserDAO implements IUserDAO{
 
              // Step 2:Create a statement using connection object
 
-             CallableStatement callableStatement = connection.prepareCall(query);) {
+             CallableStatement callableStatement = connection.prepareCall(query)) {
 
             callableStatement.setInt(1, id);
 
@@ -171,7 +189,6 @@ public class UserDAO implements IUserDAO{
     }
 
 
-
     @Override
 
     public void insertUserStore(User user) throws SQLException {
@@ -182,7 +199,7 @@ public class UserDAO implements IUserDAO{
 
         try (Connection connection = getConnection();
 
-             CallableStatement callableStatement = connection.prepareCall(query);) {
+             CallableStatement callableStatement = connection.prepareCall(query)) {
 
             callableStatement.setString(1, user.getName());
 
@@ -323,6 +340,75 @@ public class UserDAO implements IUserDAO{
                 System.out.println(e.getMessage());
 
             }
+
+        }
+
+    }
+
+    @Override
+    public void insertUpdateWithoutTransaction() {
+
+        try (Connection conn = getConnection();
+
+             Statement statement = conn.createStatement();
+
+             PreparedStatement psInsert = conn.prepareStatement(SQL_INSERT);
+
+             PreparedStatement psUpdate = conn.prepareStatement(SQL_UPDATE)) {
+
+
+
+            statement.execute(SQL_TABLE_DROP);
+
+            statement.execute(SQL_TABLE_CREATE);
+
+
+
+            // Run list of insert commands
+
+            psInsert.setString(1, "Quynh");
+
+            psInsert.setBigDecimal(2, new BigDecimal(10));
+
+            psInsert.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+
+            psInsert.execute();
+
+
+
+            psInsert.setString(1, "Ngan");
+
+            psInsert.setBigDecimal(2, new BigDecimal(20));
+
+            psInsert.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+
+            psInsert.execute();
+
+
+
+            // Run list of update commands
+
+
+
+            // below line caused error, test transaction
+
+            // org.postgresql.util.PSQLException: No value specified for parameter 1.
+
+            psUpdate.setBigDecimal(2, new BigDecimal(999.99));
+
+
+
+            //psUpdate.setBigDecimal(1, new BigDecimal(999.99));
+
+            psUpdate.setString(2, "Quynh");
+
+            psUpdate.execute();
+
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
 
         }
 
